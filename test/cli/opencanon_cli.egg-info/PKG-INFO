@@ -1,0 +1,79 @@
+Metadata-Version: 2.4
+Name: opencanon-cli
+Version: 0.1.0
+Summary: Open Canon - Standalone Local AI Video & Media Generation CLI
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: click>=8.1.0
+Requires-Dist: rich>=13.0.0
+Requires-Dist: huggingface-hub>=0.20.0
+Requires-Dist: requests>=2.31.0
+Requires-Dist: pynvml>=11.5.0
+Requires-Dist: soundfile>=0.12.0
+Requires-Dist: numpy<2.0.0,>=1.26.0
+Requires-Dist: opencv-python-headless>=4.9.0
+Requires-Dist: Pillow>=10.0.0
+
+# Open Canon CLI — Standalone AI Video & Production Engine
+
+A standalone, local-first CLI suite for AI Video (up to 5m clip stitching), Image (FLUX.1), Text-to-Speech (Kokoro & CosyVoice), Voice Cloning (Chatterbox), Lip-Sync (Wav2Lip), AI Presenters, 3D Motion FX, Subtitle Captioning (Whisper), Reddit Reels, Custom Model Training (LoRA), Local API Server, and Community Compute Workers.
+
+---
+
+## Installation
+
+```bash
+cd cli
+
+# 1. Install PyTorch with CUDA:
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# 2. Install editable CLI package:
+pip install -e .
+```
+
+---
+
+## Quick Usage Commands
+
+```bash
+# 1. System Check
+python -m cli.main setup --check
+
+# 2. Model Management
+python -m cli.main models --list
+python -m cli.main models --installable
+python -m cli.main models --switch wan-t2v-1.3b
+
+# 3. Video Generation (Text-to-Video with TTS & Auto-Tuning)
+python -m cli.main generate video --prompt "A futuristic cybernetic tiger in neon rain" --tts --quality fast
+
+# 4. Long Video Stitching (Up to 5 minutes)
+python -m cli.main generate video --prompt "Journey across galaxies" --duration 5m
+
+# 5. Image Generation (FLUX.1 Schnell)
+python -m cli.main generate image --prompt "A sleek futuristic camera lens"
+
+# 6. Text-to-Speech & Voice Cloning
+python -m cli.main generate tts --text "Hello from Open Canon"
+python -m cli.main generate voice-clone --text "Sample text" --reference voice_sample.wav
+
+# 7. AI Presenter & 3D Motion Graphics
+python -m cli.main generate presenter --character host_1 --text "Welcome to today's broadcast."
+python -m cli.main generate motion-fx --prompt "Geometric particle flow" --style 3d_render
+
+# 8. Subtitle Captioning (Alex Hormozi / TikTok Styles)
+python -m cli.main caption generate --video clip.mp4 --style hormozi --burn-in
+
+# 9. Reddit Story Shorts / Reels Generator
+python -m cli.main social reddit-reel --url "https://reddit.com/r/AskReddit/comments/..."
+
+# 10. Custom Model Training & Publishing
+python -m cli.main train video --dataset ./my_dataset --output ./models/custom_video_lora
+python -m cli.main publish --model ./models/custom_video_lora --hf-repo open-canon/custom-video-lora
+
+# 11. Local Server & Compute Workers
+python -m cli.main serve --port 8000
+python -m cli.main compute status
+python -m cli.main compute worker --node-name "my_gpu_worker"
+```

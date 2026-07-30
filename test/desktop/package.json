@@ -1,0 +1,41 @@
+{
+  "name": "desktop",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "ollama:up": "docker-compose -f ../docker-compose.yml up -d",
+    "ollama:pull": "docker exec opencanon-ollama ollama run llama3.2 \"\" || exit 0",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "build:electron": "tsc electron/main.ts electron/preload.ts --outDir dist-electron --module CommonJS --esModuleInterop --ignoreConfig && echo {\"type\":\"commonjs\"} > dist-electron/package.json",
+    "electron:dev": "npm run ollama:up && npm run ollama:pull && concurrently -k \"vite\" \"npm run build:electron && wait-on tcp:5173 && electron .\"",
+    "electron:build": "npm run build && npm run build:electron && electron-builder",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "cross-spawn": "^7.0.6",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.111.0",
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "clsx": "^2.1.1",
+    "concurrently": "^10.0.4",
+    "cross-env": "^10.1.0",
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
+    "lucide-react": "^1.27.0",
+    "oxlint": "^1.71.0",
+    "tailwind-merge": "^3.6.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1",
+    "wait-on": "^9.1.0"
+  }
+}

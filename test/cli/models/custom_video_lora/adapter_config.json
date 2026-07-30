@@ -1,0 +1,9 @@
+{
+  "base_model": "wan-t2v-1.3b",
+  "model_type": "video",
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "dataset": "README.md",
+  "num_steps": 500,
+  "status": "trained_baseline"
+}

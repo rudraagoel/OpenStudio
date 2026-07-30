@@ -1,0 +1,2 @@
+python -m cli.main generate video --prompt 'A sleek futuristic hover-car flying through a neon-lit cyberpunk rain at night, ultra cinematic, 4K 4s' --render-style cinematic --quality balanced --model wan-t2v-1.3b --duration 4s
+exit $LASTEXITCODE
