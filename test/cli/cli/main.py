@@ -23,7 +23,6 @@ from .commands.setup import setup_cmd
 from .commands.models import models_cmd
 from .commands.generate import generate_cmd
 from .commands.caption import caption_cmd
-from .commands.social import social_cmd
 from .commands.serve import serve_cmd
 from .commands.compute import compute_cmd
 from .commands.train import train_cmd
@@ -47,7 +46,6 @@ cli.add_command(models_cmd, name="models")
 cli.add_command(generate_cmd, name="generate")
 cli.add_command(character_cmd, name="character")
 cli.add_command(caption_cmd, name="caption")
-cli.add_command(social_cmd, name="social")
 cli.add_command(edit_cmd, name="edit")
 cli.add_command(serve_cmd, name="serve")
 cli.add_command(compute_cmd, name="compute")

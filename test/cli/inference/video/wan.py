@@ -27,7 +27,7 @@ class WanT2VRunner(ModelRunner):
             if hasattr(self.pipeline, "enable_vae_slicing"):
                 self.pipeline.enable_vae_slicing()
             vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
-            if vram_gb >= 12 and hasattr(self.pipeline, "enable_model_cpu_offload"):
+            if vram_gb > 11.0 and hasattr(self.pipeline, "enable_model_cpu_offload"):
                 self.pipeline.enable_model_cpu_offload()
             else:
                 self.pipeline.enable_sequential_cpu_offload()
@@ -90,7 +90,7 @@ class WanI2VRunner(ModelRunner):
             if hasattr(self.pipeline, "enable_vae_slicing"):
                 self.pipeline.enable_vae_slicing()
             vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
-            if vram_gb >= 12 and hasattr(self.pipeline, "enable_model_cpu_offload"):
+            if vram_gb > 11.0 and hasattr(self.pipeline, "enable_model_cpu_offload"):
                 self.pipeline.enable_model_cpu_offload()
             else:
                 self.pipeline.enable_sequential_cpu_offload()

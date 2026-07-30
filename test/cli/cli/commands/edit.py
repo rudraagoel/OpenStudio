@@ -75,18 +75,24 @@ def create_clip(video, duration, aspect_ratio, auto_track, output, dry_run):
 
         task3 = progress.add_task("3/3 Exporting final short...", total=100)
         if not dry_run:
-            import cv2
-            import numpy as np
-            # Create a mock video to satisfy output creation
-            fps = 30
-            width, height = (720, 1280) if aspect_ratio == "9:16" else (1080, 1080)
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-            out = cv2.VideoWriter(output, fourcc, fps, (width, height))
-            for _ in range(30): # Just 1 second for the mock output
-                frame = np.zeros((height, width, 3), dtype=np.uint8)
-                frame[:] = (50, 100, 200) # Solid color
-                out.write(frame)
-            out.release()
+            import subprocess
+            
+            w, h = (720, 1280) if aspect_ratio == "9:16" else ((1080, 1080) if aspect_ratio == "1:1" else (1280, 720))
+            
+            # Use ffmpeg to crop to center and trim to duration
+            cmd = [
+                "ffmpeg", "-y",
+                "-i", video,
+                "-vf", f"crop=ih*({w}/{h}):ih,scale={w}:{h}",
+                "-t", duration.replace("s", ""),
+                "-c:v", "libx264",
+                "-c:a", "aac",
+                output
+            ]
+            try:
+                subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+            except Exception as e:
+                console.print(f"[red]Error during clip generation:[/red] {e}")
         else:
             Path(output).write_bytes(b"Mock clip output")
             
@@ -147,17 +153,36 @@ def auto_edit(folder, instructions, music, output, dry_run):
             
         task4 = progress.add_task("4/4 Rendering composite timeline export...", total=100)
         if not dry_run:
-            import cv2
-            import numpy as np
-            fps = 30
-            width, height = (1080, 1920)
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-            out = cv2.VideoWriter(output, fourcc, fps, (width, height))
-            for _ in range(60): # 2 second mock
-                frame = np.zeros((height, width, 3), dtype=np.uint8)
-                frame[:] = (100, 50, 150)
-                out.write(frame)
-            out.release()
+            from ..inference.video.stitcher import VideoStitcher
+            stitcher = VideoStitcher(None, get_outputs_dir() / "videos")
+            
+            video_paths = []
+            for f in asset_files:
+                p = str(Path(folder) / f)
+                if p.lower().endswith(('.mp4', '.mov')):
+                    video_paths.append(p)
+                    
+            if video_paths:
+                try:
+                    stitcher.concatenate_videos(video_paths, output, crossfade_duration=0.5)
+                except Exception as e:
+                    console.print(f"[red]Error during concatenation:[/red] {e}")
+                    import shutil
+                    if len(video_paths) > 0:
+                        shutil.copy(video_paths[0], output)
+            else:
+                # Fallback if only images
+                import cv2
+                import numpy as np
+                fps = 30
+                width, height = (1080, 1920)
+                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                out = cv2.VideoWriter(output, fourcc, fps, (width, height))
+                for _ in range(60): 
+                    frame = np.zeros((height, width, 3), dtype=np.uint8)
+                    frame[:] = (100, 50, 150)
+                    out.write(frame)
+                out.release()
         else:
             Path(output).write_bytes(b"Mock auto-edit composite output")
             

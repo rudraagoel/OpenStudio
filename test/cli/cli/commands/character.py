@@ -131,22 +131,46 @@ def speak_character(char_name, text, emotion, output, dry_run):
 
     with progress:
         t1 = progress.add_task(f"1/3 Synthesizing {char_info['name']}'s voice narration ({emotion})...", total=100)
-        import time
-        for i in range(5):
-            time.sleep(0.03)
-            progress.update(t1, completed=(i+1)*20)
+        import tempfile
+        import os
+        from inference import get_runner
+        
+        tmpdir = tempfile.mkdtemp()
+        try:
+            audio_path = os.path.join(tmpdir, "voice.wav")
+            if not dry_run:
+                tts_runner = get_runner("kokoro-tts")
+                tts_runner.load()
+                tts_runner.generate({"text": text, "voice": char_info.get("voice", "af_heart"), "output_path": audio_path})
+                tts_runner.unload()
+            else:
+                Path(audio_path).write_bytes(b"Mock")
+            progress.update(t1, completed=100)
 
-        t2 = progress.add_task(f"2/3 Generating {char_info['style']} character render & lip-sync mesh...", total=100)
-        for i in range(5):
-            time.sleep(0.03)
-            progress.update(t2, completed=(i+1)*20)
+            t2 = progress.add_task(f"2/3 Generating {char_info['style']} character render...", total=100)
+            base_vid_path = os.path.join(tmpdir, "base_char.mp4")
+            
+            prompt = f"{char_info['name']}, {char_info['description']}, talking directly to camera, mid shot, centered face. {char_info['style']} style."
+            
+            if not dry_run:
+                from .generate import _generate_real_video
+                _generate_real_video(base_vid_path, prompt, width=512, height=512, duration_sec=5.0, model="wan-t2v-1.3b")
+            else:
+                Path(base_vid_path).write_bytes(b"Mock video")
+            progress.update(t2, completed=100)
 
-        t3 = progress.add_task("3/3 Compositing video track & neural face enhancement...", total=100)
-        for i in range(5):
-            time.sleep(0.03)
-            progress.update(t3, completed=(i+1)*20)
-
-        Path(output).write_bytes(b"Open Canon Speaking AI Character Video Export Stream Data")
+            t3 = progress.add_task("3/3 Compositing video track & neural face enhancement...", total=100)
+            if not dry_run:
+                lip_runner = get_runner("wav2lip")
+                lip_runner.load()
+                lip_runner.generate({"face_video": base_vid_path, "audio": audio_path, "output_path": output})
+                lip_runner.unload()
+            else:
+                Path(output).write_bytes(b"Mock")
+            progress.update(t3, completed=100)
+        finally:
+            import shutil
+            shutil.rmtree(tmpdir, ignore_errors=True)
 
     console.print(f"\n[green]✓[/green] Speaking character video saved to [bold]{output}[/bold]")
 
@@ -183,19 +207,63 @@ def dialogue_scene(char1, char2, script, setting, output, dry_run):
     )
 
     with progress:
-        for idx, line in enumerate(lines):
-            task = progress.add_task(f"Shot {idx+1}/{len(lines)}: Synthesizing {line[:30]}...", total=100)
-            import time
-            for i in range(5):
-                time.sleep(0.03)
-                progress.update(task, completed=(i+1)*20)
+        import tempfile
+        import os
+        from inference import get_runner
+        from .generate import _generate_real_video
+        from ..inference.video.stitcher import VideoStitcher
+        
+        tmpdir = tempfile.mkdtemp()
+        try:
+            tts_runner = get_runner("kokoro-tts")
+            lip_runner = get_runner("wav2lip")
+            if not dry_run:
+                tts_runner.load()
+                lip_runner.load()
+                
+            shot_paths = []
+            
+            for idx, line in enumerate(lines):
+                task = progress.add_task(f"Shot {idx+1}/{len(lines)}: Synthesizing {line[:30]}...", total=100)
+                
+                parts = line.split(":", 1)
+                speaker = parts[0].strip() if len(parts) > 1 else char1
+                text = parts[1].strip() if len(parts) > 1 else line
+                
+                char_id = speaker.lower().replace(" ", "_")
+                speaker_info = chars.get(char_id, {"name": speaker, "style": "3d_pixar", "voice": "af_heart", "description": ""})
+                
+                if not dry_run:
+                    # 1. TTS
+                    audio_path = os.path.join(tmpdir, f"audio_{idx}.wav")
+                    tts_runner.generate({"text": text, "voice": speaker_info.get("voice", "af_heart"), "output_path": audio_path})
+                    
+                    # 2. Base Video
+                    base_vid_path = os.path.join(tmpdir, f"base_vid_{idx}.mp4")
+                    prompt = f"{speaker_info['name']}, {speaker_info['description']}, talking directly to camera, mid shot, centered face. {speaker_info['style']} style. Setting: {setting}."
+                    _generate_real_video(base_vid_path, prompt, width=512, height=512, duration_sec=5.0, model="wan-t2v-1.3b")
+                    
+                    # 3. Lip Sync
+                    final_shot_path = os.path.join(tmpdir, f"shot_{idx}.mp4")
+                    lip_runner.generate({"face_video": base_vid_path, "audio": audio_path, "output_path": final_shot_path})
+                    shot_paths.append(final_shot_path)
+                
+                progress.update(task, completed=100)
 
-        t_final = progress.add_task("Finalizing shot transitions, audio mix & video export...", total=100)
-        import time
-        for i in range(5):
-            time.sleep(0.03)
-            progress.update(t_final, completed=(i+1)*20)
-
-        Path(output).write_bytes(b"Open Canon Multi Character Dialogue Scene Stream Data")
+            t_final = progress.add_task("Finalizing shot transitions, audio mix & video export...", total=100)
+            if not dry_run:
+                stitcher = VideoStitcher(None, get_outputs_dir() / "videos")
+                if shot_paths:
+                    stitcher.concatenate_videos(shot_paths, output, crossfade_duration=0.0) # 0.0 crossfade for cut transitions in dialogue
+            else:
+                Path(output).write_bytes(b"Mock")
+                
+            progress.update(t_final, completed=100)
+        finally:
+            import shutil
+            shutil.rmtree(tmpdir, ignore_errors=True)
+            if not dry_run:
+                tts_runner.unload()
+                lip_runner.unload()
 
     console.print(f"\n[green]✓[/green] Multi-character dialogue scene saved to [bold]{output}[/bold]")

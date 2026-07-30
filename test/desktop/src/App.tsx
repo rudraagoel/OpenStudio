@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { 
   Film, Sparkles, UserCheck, Mic, Upload, Image as ImageIcon,
-  Zap, Play, Clock, AlertTriangle, MonitorPlay, MessageSquare,
-  Scissors, AlignCenter, MonitorSmartphone, Cpu, Cloud, Volume2, 
-  Activity, Database, LayoutTemplate, Settings, Download, Plus, X
+  Zap, Play, AlertTriangle, MonitorPlay, MessageSquare,
+  Scissors, AlignCenter, MonitorSmartphone, Cpu, 
+  Activity, Database, Plus, X
 } from 'lucide-react';
 import './index.css';
 
@@ -14,7 +14,6 @@ const MODES = [
   { id: 'character-story', icon: UserCheck, name: 'Character Story', desc: 'Narrative with consistent AI characters.' },
   { id: 'speaking', icon: Mic, name: 'Speaking Characters', desc: 'AI presenter with lip-sync.' },
   { id: 'faceless', icon: UserCheck, name: 'Faceless Story', desc: 'Cinematic narration over B-roll.' },
-  { id: 'reddit', icon: MonitorPlay, name: 'Reddit Stories', desc: 'TTS narration over gameplay shorts.' },
   { id: 'yapstyle', icon: MessageSquare, name: 'YapStyle', desc: 'Avatar clone from single reference.' },
   { id: 'caption', icon: AlignCenter, name: 'Captioning', desc: 'Hormozi/TikTok style text.' },
   { id: 'autoedit', icon: Scissors, name: 'Auto Edit', desc: 'AI edit raw folder footage.' },
@@ -138,7 +137,7 @@ export default function App() {
           
           // Use powershell to write props.json to avoid Windows quoting nightmares with npx
           const remotionCmd = `Set-Content -Path '../remotion/props.json' -Value '${JSON.stringify(propsObj)}' -Encoding utf8; cd ../remotion ; npx remotion render src/index.ts AIComposition out.mp4 --props props.json`;
-          
+          // @ts-ignore
           await window.opencanon.runCommand(remotionCmd);
           setConsoleLog(prev => [...prev, "[SYSTEM] Remotion VFX complete. Updating output preview."]);
           
@@ -200,10 +199,7 @@ export default function App() {
         cmd = `python -m cli.main character speak --character "Default" --text '${finalPrompt.replace(/'/g, "''")}' ${voiceArgs}`;
         break;
       case 'faceless':
-        cmd = `python -m cli.main generate video --prompt '${finalPrompt.replace(/'/g, "''")}' --render-style cinematic --tts true ${baseArgs} ${voiceArgs}`;
-        break;
-      case 'reddit':
-        cmd = `python -m cli.main social reddit-reel --story '${finalPrompt.replace(/'/g, "''")}' ${voiceArgs}`;
+        cmd = `python -m cli.main generate story --script '${finalPrompt.replace(/'/g, "''")}' --duration ${autoLength} ${voiceArgs}`;
         break;
       case 'yapstyle':
         cmd = `python -m cli.main generate yap --prompt '${finalPrompt.replace(/'/g, "''")}'`;
@@ -357,6 +353,7 @@ export default function App() {
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>Train custom stylistic or subject embeddings directly on your local GPU.</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <label className="btn-ghost" style={{ cursor: 'pointer', flex: 1, justifyContent: 'center' }}>
+                    {/* @ts-ignore */}
                     <input type="file" style={{ display: 'none' }} webkitdirectory="" directory="" onChange={(e: any) => { if (e.target.files && e.target.files[0]) setFolderRef(e.target.files[0].path); }} />
                     <Upload size={16} /> {folderRef ? 'Dataset Attached' : 'Select Dataset Folder'}
                   </label>
@@ -428,6 +425,7 @@ export default function App() {
                 )}
                 {mode === 'autoedit' && (
                   <label className="btn-ghost" style={{ cursor: 'pointer', flex: 1, justifyContent: 'center' }}>
+                    {/* @ts-ignore */}
                     <input type="file" style={{ display: 'none' }} webkitdirectory="" directory="" onChange={(e: any) => { if (e.target.files && e.target.files[0]) setFolderRef(e.target.files[0].path); }} />
                     <Upload size={16} /> {folderRef ? 'Folder Attached' : 'Attach Folder (Auto Edit)'}
                   </label>
